@@ -1,0 +1,10 @@
+# version
+version=1.0
+
+# you can manually provide the path to the Redshift executable, 
+# or leave blank if Redshift is already installed and available in $path
+redshiftexecutable=
+
+# !! this value should not be modified by user !!
+# should be set between 500 and 6000
+currentcolortemp=3000

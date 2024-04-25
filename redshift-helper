@@ -1,0 +1,134 @@
+#!/bin/bash
+
+# 設定檔路徑預期從launcher帶入，例如:
+# bash -c "export \"rhpath=/path/to/redshift-helper\" && \"$rhpath/redshift-helper\""
+# 未帶入則要把設定檔放在正確位置，否則每次開啟都是off狀態
+source "$rhpath"/.redshift-helper-config
+
+# 當前色溫: 預設從設定檔讀取
+colortemp=$currentcolortemp
+# colortemp最小值: 為了內部處理方便，會把500當作colortemp的最小值，而不是0
+mincolortempinternal=500
+
+# 最小色溫: 原始redshift可接受的最小值
+mincolortemp=1000
+# 最大色溫: 6500是初始值，應該不會用到比這個高
+maxcolortemp=6000
+# 色溫增減幅度
+interval=500
+
+# 程式狀態: 開啟:1, 關閉:0
+status=0
+
+# 更新畫面
+function screen {
+    clear
+    echo "redshift helper $version"
+	echo "useage:"
+    echo "[Right] to increase"
+    echo " [Left] to decrease"
+    echo "[Enter] to confirm"
+    echo "    [q] to exit"
+	if (( status == 0 )); then
+	    echo current: off
+	else
+	    echo current: "$colortemp"K
+	fi
+}
+
+# 檢查redshift執行檔是否存在並可用
+function check {
+    local "test=$redshiftexecutable"
+    if [[ $test == "" ]]; then
+        test=redshift
+	fi
+
+	if [[ $( $test -V ) != *"redshift"* ]]; then
+	    echo "you have to install redshift or give correct executable path inside the config file"
+		echo "for further information, please refer to: https://github.com/jonls/redshift"
+		exit
+	fi
+}
+
+# 程式初始動作
+function init {
+    check
+	# 確認當前色溫不到colortemp最小值時，設定為最小值
+    if (( currentcolortemp < mincolortempinternal )); then
+	    let "colortemp=mincolortempinternal"
+	fi
+	# 確認當前色溫超過色溫最大值時，設定為最大值
+    if (( currentcolortemp > maxcolortemp )); then
+	    let "colortemp=maxcolortemp"
+	fi
+
+    # 當前色溫值小於最小色溫值時視為關閉狀態，反之為開啟
+    if (( currentcolortemp < mincolortemp )); then 
+        status=0
+    else 
+        status=1
+    fi
+	execredshift
+	screen
+}
+
+# 增減色溫值
+function modcolortemp {
+    # 先用臨時參數test計算加減後的色溫值
+    local test=$(( colortemp + $1 ))
+	# 小於最小值時視為關閉，並更新當前色溫為colortemp最小值
+	if (( test < mincolortemp )); then
+	    status=0
+		let "colortemp=mincolortempinternal"
+	# 上一條不成立，且小於色溫最大值時視為開啟，並更新當前色溫為test的值
+	elif (( test <= maxcolortemp )); then
+	    status=1
+        let "colortemp=test"
+	fi
+}
+
+# 更新設定檔內當前色溫
+function updateconfig {
+    sed -i "s/currentcolortemp=.*/currentcolortemp=$colortemp/" "$rhpath"/.redshift-helper-config
+}
+
+# 執行redshift指令
+function execredshift {
+    if (( status == 1 )); then
+	    redshift -O $colortemp -P
+	else
+	    redshift -x
+	fi
+}
+
+# -----------------------------------------------------
+
+# 初始處理
+init
+# 建立program loop
+while true; do
+# 讀取使用者輸入的1個字元
+read -rsn1 input
+# ansi code的escape(^[)判斷是否按了與[Esc]有關的按鍵
+if [[ $input == $'\x1b' ]]; then
+    # 有的話讀取2個字元
+    read -rsn2 arrow
+    case $arrow in
+	    # 判斷是否為[Right]
+        '[C') modcolortemp $(( 1 * interval ));;
+		# 判斷是否為[Left]
+        '[D') modcolortemp $(( -1 * interval ));;
+    esac
+    screen
+# 用ansi code的 Carriage Return (^M) 判斷是否按了[Enter]
+# 這裡用0x0a也可以抓到
+elif [[ $input == $'\0d' ]]; then
+    execredshift
+	updateconfig
+else
+    # 按了[q]時結束程式，其餘按鍵則不回應
+    if [[ "$input" == "q" ]]; then
+        exit
+	fi
+fi
+done
