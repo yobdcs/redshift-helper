@@ -1,6 +1,6 @@
 ## Redshift-helper
 
-To use this program, you need the original Redshift be nstalled. Please refer to Redshift repository: https://github.com/jonls/redshift
+To use this program, you need the original Redshift be installed. Please refer to Redshift repository: https://github.com/jonls/redshift
 
 This is a simple terminal program for customizing color temperature by pressing keyboard [Right]/[Left] key. You can add this program to your launcher or create a shortcut and pin it to your panel for convenience.
 
