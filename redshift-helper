@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 設定檔路徑預期從launcher帶入，例如:
-# bash -c "export \"rhpath=/path/to/redshift-helper\" && \"$rhpath/redshift-helper\""
+# bash -c "export rhpath=\"/path/to/redshift-helper\" && \"$rhpath\"/redshift-helper"
 # 未帶入則要把設定檔放在正確位置，否則每次開啟都是off狀態
 source "$rhpath"/.redshift-helper-config
 
