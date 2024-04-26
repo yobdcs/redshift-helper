@@ -10,7 +10,7 @@ Usage:
 2. Make the program executable.
 
 3. Set the following script to your desktop app launcher or shortcut.
-`bash -c "export \"rhpath=/path/to/redshift-helper\" && \"$rhpath/redshift-helper\""`
+`bash -c "export rhpath=\"/path/to/redshift-helper\" && \"$rhpath\"/redshift-helper"`
 
 You need to replace the `/path/to/redshift-helper` part with the path where you have cloned this repository.
 
